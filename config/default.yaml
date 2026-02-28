@@ -1,0 +1,84 @@
+# SearchMuse Default Configuration
+# Override values via environment variables (SEARCHMUSE_*) or custom config file
+
+# LLM settings (Ollama, Claude, OpenAI, Gemini)
+llm:
+  # Provider: "ollama", "claude", "openai", "gemini"
+  provider: "ollama"
+  base_url: "http://localhost:11434"
+  model: "mistral"
+  # API key (null = resolve from env vars or system keyring)
+  api_key: null
+  # Temperature for search strategy generation (lower = more focused)
+  strategy_temperature: 0.3
+  # Temperature for content assessment (lower = more consistent)
+  assessment_temperature: 0.1
+  # Temperature for final synthesis (higher = more creative)
+  synthesis_temperature: 0.7
+  # Maximum tokens for LLM responses
+  max_tokens: 4096
+  # Request timeout in seconds
+  timeout: 120
+
+# Search settings
+search:
+  # Maximum number of refinement iterations
+  max_iterations: 5
+  # Minimum number of sources before stopping
+  min_sources: 3
+  # Minimum coverage score (0.0-1.0) to consider search sufficient
+  min_coverage_score: 0.7
+  # Maximum results per search query
+  results_per_query: 10
+  # Default search language
+  default_language: "en"
+
+# Scraping settings
+scraping:
+  # Delay between requests to the same domain (seconds)
+  request_delay: 1.0
+  # HTTP request timeout (seconds)
+  request_timeout: 30
+  # Maximum concurrent requests
+  max_concurrent: 5
+  # Respect robots.txt
+  respect_robots_txt: true
+  # User-Agent string
+  user_agent: "SearchMuse/0.1.0 (research-assistant; +https://github.com/user/searchmuse)"
+  # Use Playwright for JavaScript-rendered pages
+  use_playwright: false
+  # Maximum page size to download (bytes)
+  max_page_size: 5_242_880  # 5 MB
+
+# Content extraction settings
+extraction:
+  # Minimum word count for a page to be considered useful
+  min_word_count: 50
+  # Maximum text length to send to LLM for assessment
+  max_text_length: 8000
+  # Preferred extractor: "trafilatura" or "readability"
+  preferred_extractor: "trafilatura"
+
+# Storage settings
+storage:
+  # SQLite database path
+  db_path: "~/.searchmuse/searchmuse.db"
+  # Keep scraped HTML in database
+  store_raw_html: false
+
+# Output settings
+output:
+  # Default output format: "markdown", "json", "plain"
+  default_format: "markdown"
+  # Include source snippets in output
+  include_snippets: true
+  # Maximum snippet length (characters)
+  max_snippet_length: 200
+
+# Logging
+logging:
+  level: "INFO"
+  # Log file path (null = stderr only)
+  file: null
+  # Include timestamps in log output
+  timestamps: true

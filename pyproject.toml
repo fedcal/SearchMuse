@@ -1,0 +1,154 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "searchmuse"
+dynamic = ["version"]
+description = "Intelligent web research assistant powered by local LLMs (Ollama) with iterative search refinement and source citation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Federico Calo" },
+]
+keywords = ["web-scraping", "llm", "ollama", "research", "citation", "search"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "httpx[http2]>=0.27",
+    "playwright>=1.45",
+    "trafilatura>=1.12",
+    "readability-lxml>=0.8",
+    "beautifulsoup4>=4.12",
+    "ollama>=0.4",
+    "typer>=0.12",
+    "rich>=13.0",
+    "pyyaml>=6.0",
+    "aiosqlite>=0.20",
+    "duckduckgo-search>=8.0",
+]
+
+[project.optional-dependencies]
+claude = ["anthropic>=0.39"]
+openai = ["openai>=1.50"]
+gemini = ["google-genai>=1.0"]
+keyring = ["keyring>=25.0"]
+all-providers = [
+    "searchmuse[claude]",
+    "searchmuse[openai]",
+    "searchmuse[gemini]",
+    "searchmuse[keyring]",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "mypy>=1.11",
+    "ruff>=0.6",
+    "respx>=0.21",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+searchmuse = "searchmuse.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/user/searchmuse"
+Documentation = "https://github.com/user/searchmuse/tree/main/docs"
+Repository = "https://github.com/user/searchmuse"
+Issues = "https://github.com/user/searchmuse/issues"
+
+[tool.hatch.version]
+path = "src/searchmuse/version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/searchmuse"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "RUF",   # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # function call in default argument (standard Typer pattern)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["searchmuse"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["anthropic", "anthropic.*", "openai", "openai.*", "google", "google.*", "google.genai", "google.genai.*", "keyring", "keyring.*"]
+ignore_missing_imports = true
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "-q",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests requiring external services",
+]
+
+[tool.coverage.run]
+source = ["searchmuse"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.",
+    "@overload",
+    "\\.\\.\\.",
+]
