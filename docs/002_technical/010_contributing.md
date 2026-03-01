@@ -553,7 +553,7 @@ Documentation files:
 - API changes: [API Reference](004_api-reference.md)
 - Configuration: [Configuration Reference](005_configuration-reference.md)
 - Architecture: [Architecture Guide](001_architecture.md)
-- User guide: [User Guide](../001_functional/user-guide.md)
+- Use cases: [Use Cases](../001_functional/002_use-cases.md)
 
 ## Related Links
 
@@ -561,8 +561,7 @@ Documentation files:
 - [Components Guide](002_components.md)
 - [Testing Strategy](007_testing-strategy.md)
 - [Development Setup](006_development-setup.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Security Policy](SECURITY.md)
+- [Security](009_security.md)
 
 ## Questions?
 

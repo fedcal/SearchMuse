@@ -19,7 +19,7 @@ SearchMuse is an open-source Python application that automates iterative web res
 
 **New Users:**
 - [Getting Started](002_technical/006_development-setup.md) - Set up SearchMuse locally
-- [User Guide](001_functional/user-guide.md) - Learn how to use the application
+- [Use Cases](001_functional/002_use-cases.md) - Learn how to use the application
 - [Configuration Guide](002_technical/005_configuration-reference.md) - Configure for your needs
 
 **Developers:**
@@ -116,10 +116,9 @@ Documentazione in italiano disponibile in `docs/003_it/`. Per una migliore esper
 
 ## Getting Help
 
-- **Questions?** Check the [FAQ](001_functional/faq.md)
+- **Questions?** Check the [Limitations & Known Issues](001_functional/009_limitations.md)
 - **Found a bug?** Open an issue on GitHub
 - **Want to contribute?** See the [Contributing Guide](002_technical/010_contributing.md)
-- **Need help?** Check [Troubleshooting](001_functional/troubleshooting.md)
 
 ## License
 
