@@ -6,31 +6,41 @@ repo_name: user/searchmuse
 
 theme:
   name: material
+  icon:
+    logo: material/magnify-scan
+    repo: fontawesome/brands/github
   palette:
     - scheme: default
-      primary: cyan
-      accent: teal
+      primary: deep purple
+      accent: amber
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-sunny
         name: Switch to dark mode
     - scheme: slate
-      primary: cyan
-      accent: teal
+      primary: deep purple
+      accent: amber
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
         name: Switch to light mode
   features:
     - navigation.tabs
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.footer
     - search.suggest
     - search.highlight
+    - search.share
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
 
 plugins:
   - search
-  - mermaid2
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -39,15 +49,38 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid_custom
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.mark
+  - pymdownx.keys
+  - pymdownx.smartsymbols
   - admonition
   - pymdownx.details
   - attr_list
   - md_in_html
+  - def_list
+  - footnotes
+  - abbr
+  - tables
   - toc:
       permalink: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+
+extra:
+  alternate:
+    - name: English
+      link: /searchmuse/
+      lang: en
+    - name: Italiano
+      link: /searchmuse/003_it/000_index/
+      lang: it
 
 nav:
   - Home: index.md

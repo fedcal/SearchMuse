@@ -1,4 +1,4 @@
-# SearchMuse - Assistente di Ricerca Web Intelligente
+# :material-translate: SearchMuse - Assistente di Ricerca Web Intelligente
 
 Benvenuti nella documentazione italiana di SearchMuse, un assistente di ricerca web intelligente che utilizza modelli di linguaggio locali tramite Ollama con perfezionamento iterativo delle ricerche e citazione delle fonti.
 

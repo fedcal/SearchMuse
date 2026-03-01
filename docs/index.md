@@ -1,4 +1,4 @@
-# SearchMuse
+# :material-home: SearchMuse
 
 **Intelligent web research powered by local LLMs.**
 

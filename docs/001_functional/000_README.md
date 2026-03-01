@@ -1,4 +1,4 @@
-# SearchMuse Functional Documentation
+# :material-book-open-variant: SearchMuse Functional Documentation
 
 Welcome to SearchMuse's comprehensive functional documentation. This collection provides complete specification and guidance for understanding, using, and extending SearchMuse.
 

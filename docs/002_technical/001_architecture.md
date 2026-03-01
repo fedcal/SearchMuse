@@ -1,4 +1,4 @@
-# SearchMuse Architecture
+# :material-cog: SearchMuse Architecture
 
 SearchMuse employs a **hexagonal architecture** (Ports & Adapters) to ensure clean separation of concerns, testability, and extensibility. This document describes the overall architecture, design decisions, and layer responsibilities.
 
