@@ -41,6 +41,24 @@ CREATE TABLE IF NOT EXISTS sources (
 )
 """
 
+_CREATE_SCRAPED_PAGES_SQL: str = """
+CREATE TABLE IF NOT EXISTS scraped_pages (
+    page_id          TEXT PRIMARY KEY,
+    session_id       TEXT NOT NULL,
+    url              TEXT NOT NULL,
+    raw_html         TEXT NOT NULL,
+    http_status      INTEGER NOT NULL,
+    content_type     TEXT NOT NULL,
+    scraped_at       TEXT NOT NULL
+)
+"""
+
+_INSERT_SCRAPED_PAGE_SQL: str = """
+INSERT OR REPLACE INTO scraped_pages (
+    page_id, session_id, url, raw_html, http_status, content_type, scraped_at
+) VALUES (?, ?, ?, ?, ?, ?, ?)
+"""
+
 _UPSERT_SQL: str = """
 INSERT OR REPLACE INTO sources (
     source_id, session_id, content_id, url, title, snippet,
@@ -124,16 +142,19 @@ class SqliteRepositoryAdapter:
         await adapter.close()
     """
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_path: str, *, store_raw_html: bool = False) -> None:
         """Initialise the adapter with the resolved database path.
 
         Args:
             db_path: Filesystem path to the SQLite database file.
                 Use :func:`os.path.expanduser` or :class:`pathlib.Path`
                 expansion before passing the value here.
+            store_raw_html: When True, enables the ``save_raw_html`` method
+                and creates the ``scraped_pages`` table.
         """
         self._db_path: Path = Path(db_path).expanduser().resolve()
         self._connection: aiosqlite.Connection | None = None
+        self._store_raw_html: bool = store_raw_html
 
     # ------------------------------------------------------------------
     # Factory
@@ -178,6 +199,8 @@ class SqliteRepositoryAdapter:
             connection: aiosqlite.Connection = await aiosqlite.connect(str(self._db_path))
             connection.row_factory = aiosqlite.Row
             await connection.execute(_CREATE_TABLE_SQL)
+            if self._store_raw_html:
+                await connection.execute(_CREATE_SCRAPED_PAGES_SQL)
             await connection.commit()
             self._connection = connection
             logger.debug("SQLite database opened at %s", self._db_path)
@@ -201,6 +224,56 @@ class SqliteRepositoryAdapter:
             finally:
                 self._connection = None
                 logger.debug("SQLite connection closed")
+
+    # ------------------------------------------------------------------
+    # Raw HTML storage
+    # ------------------------------------------------------------------
+
+    async def save_raw_html(
+        self,
+        page_id: str,
+        session_id: str,
+        url: str,
+        raw_html: str,
+        http_status: int,
+        content_type: str,
+        scraped_at: datetime,
+    ) -> None:
+        """Persist scraped raw HTML when ``store_raw_html`` is enabled.
+
+        Args:
+            page_id: Unique page identifier.
+            session_id: Search session identifier.
+            url: The fetched URL.
+            raw_html: Full raw HTML body.
+            http_status: HTTP response status code.
+            content_type: MIME content type string.
+            scraped_at: UTC timestamp of the scrape.
+
+        Raises:
+            StorageError: When the insert fails.
+        """
+        if not self._store_raw_html:
+            return
+
+        conn = await self._ensure_db()
+        params = (
+            page_id,
+            session_id,
+            url,
+            raw_html,
+            http_status,
+            content_type,
+            scraped_at.isoformat(),
+        )
+        try:
+            await conn.execute(_INSERT_SCRAPED_PAGE_SQL, params)
+            await conn.commit()
+            logger.debug("Saved raw HTML for page %s", page_id)
+        except aiosqlite.Error as exc:
+            raise StorageError(
+                f"Failed to save raw HTML for page {page_id!r}: {exc}"
+            ) from exc
 
     # ------------------------------------------------------------------
     # SourceRepositoryPort implementation

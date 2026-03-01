@@ -27,6 +27,7 @@ class LLMPort(Protocol):
         self,
         query: SearchQuery,
         previous_iterations: tuple[SearchIteration, ...],
+        chat_context: tuple[tuple[str, str], ...] = (),
     ) -> SearchStrategy:
         """Generate a search strategy for the next iteration.
 
@@ -34,6 +35,8 @@ class LLMPort(Protocol):
             query: The current search query.
             previous_iterations: All iterations completed so far,
                 used to avoid repeating ineffective strategies.
+            chat_context: Optional pairs of (query_text, synthesis_text)
+                from previous conversations in the same chat session.
 
         Returns:
             A new frozen SearchStrategy with search terms and reasoning.

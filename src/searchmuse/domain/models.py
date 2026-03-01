@@ -155,6 +155,7 @@ class Citation:
         index: 1-based display index in the final report.
         formatted_text: Human-readable citation string.
         url: URL included in the citation.
+        snippet: Optional short excerpt from the source content.
     """
 
     citation_id: str
@@ -162,6 +163,7 @@ class Citation:
     index: int
     formatted_text: str
     url: str
+    snippet: str = ""
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -245,6 +247,72 @@ class SearchState:
             self,
             all_sources=(*self.all_sources, *new_sources),
         )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ChatMessage:
+    """A single message in a chat session.
+
+    Attributes:
+        message_id: Unique identifier for this message.
+        role: Either "user" or "assistant".
+        content: The text content of the message.
+        created_at: UTC timestamp of message creation.
+        result_json: Empty string for user messages; serialised
+            SearchResult JSON for assistant messages.
+    """
+
+    message_id: str
+    role: str
+    content: str
+    created_at: datetime
+    result_json: str = ""
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ChatSession:
+    """A named chat session containing an ordered sequence of messages.
+
+    Attributes:
+        session_id: Unique identifier for this chat session.
+        name: Human-readable session name.
+        messages: Ordered tuple of chat messages.
+        created_at: UTC timestamp of session creation.
+        updated_at: UTC timestamp of last modification.
+    """
+
+    session_id: str
+    name: str
+    messages: tuple[ChatMessage, ...]
+    created_at: datetime
+    updated_at: datetime
+
+    def with_message(self, message: ChatMessage) -> ChatSession:
+        """Return a new session with the given message appended.
+
+        Args:
+            message: The message to append.
+
+        Returns:
+            A new ChatSession with the message added and updated_at refreshed.
+        """
+        return dataclasses.replace(
+            self,
+            messages=(*self.messages, message),
+            updated_at=message.created_at,
+        )
+
+    def with_name(self, name: str, updated_at: datetime) -> ChatSession:
+        """Return a new session with the name changed.
+
+        Args:
+            name: The new session name.
+            updated_at: Timestamp of the rename.
+
+        Returns:
+            A new ChatSession with the updated name.
+        """
+        return dataclasses.replace(self, name=name, updated_at=updated_at)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

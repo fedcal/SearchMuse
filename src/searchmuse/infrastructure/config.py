@@ -103,6 +103,7 @@ class LoggingConfig:
     level: str
     file: str | None
     timestamps: bool
+    ui_language: str = "en"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

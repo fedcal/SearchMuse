@@ -7,6 +7,17 @@ No f-strings are used here; formatting is deferred to the adapter at call time.
 from __future__ import annotations
 
 # ---------------------------------------------------------------------------
+# Chat context section (injected into strategy prompt when available)
+# ---------------------------------------------------------------------------
+
+CONTEXT_SECTION: str = """
+PREVIOUS RESEARCH IN THIS CONVERSATION:
+{context_entries}
+
+Use this prior research to avoid repeating work and to build on previous findings.
+"""
+
+# ---------------------------------------------------------------------------
 # Strategy generation
 # ---------------------------------------------------------------------------
 
@@ -14,7 +25,7 @@ STRATEGY_PROMPT: str = """You are a research assistant helping to find high-qual
 on the web. Your task is to generate an effective search strategy for the query below.
 
 QUERY: {query}
-
+{context_block}
 PREVIOUS ITERATION SUMMARIES:
 {previous_summaries}
 

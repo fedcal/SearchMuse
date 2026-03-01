@@ -123,28 +123,36 @@ class TestVersionFlag:
 
 
 # ---------------------------------------------------------------------------
-# Test 2: no arguments shows help
+# Test 2: no arguments launches interactive mode
 # ---------------------------------------------------------------------------
 
 
-class TestNoArgsShowsHelp:
-    """Running without arguments must show help text and exit 0."""
+class TestNoArgsLaunchesInteractive:
+    """Running without arguments must launch the interactive session."""
 
-    def test_no_args_exit_code(self) -> None:
-        result = runner.invoke(app, [])
+    def test_no_args_calls_interactive_session(self) -> None:
+        with patch("searchmuse.cli.interactive.InteractiveSession") as mock_cls:
+            mock_instance = MagicMock()
+            mock_cls.return_value = mock_instance
+            result = runner.invoke(app, [])
 
-        # Typer with no_args_is_help=True exits with code 0 or 2 depending on version.
-        assert result.exit_code in {0, 2}
+        mock_cls.assert_called_once()
+        mock_instance.run.assert_called_once()
+        assert result.exit_code == 0
 
-    def test_no_args_shows_usage_text(self) -> None:
-        result = runner.invoke(app, [])
+    def test_no_args_passes_config_path(self) -> None:
+        with patch("searchmuse.cli.interactive.InteractiveSession") as mock_cls:
+            mock_instance = MagicMock()
+            mock_cls.return_value = mock_instance
+            result = runner.invoke(app, ["--config", "/tmp/custom.yaml"])
 
-        # Typer emits "Usage:" in its help output.
-        assert "Usage" in result.output or "usage" in result.output.lower()
+        mock_cls.assert_called_once_with(config_path=Path("/tmp/custom.yaml"))
+        assert result.exit_code == 0
 
-    def test_no_args_mentions_app_name(self) -> None:
-        result = runner.invoke(app, [])
+    def test_help_flag_shows_usage(self) -> None:
+        result = runner.invoke(app, ["--help"])
 
+        assert result.exit_code == 0
         assert "searchmuse" in result.output.lower()
 
 

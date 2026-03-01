@@ -24,6 +24,7 @@ from searchmuse.domain.models import (
     Source,
 )
 from searchmuse.domain.validators import validate_query
+from searchmuse.infrastructure.i18n import t
 
 if TYPE_CHECKING:
     from searchmuse.application.progress import ProgressCallback
@@ -88,11 +89,17 @@ class SearchOrchestrator:
             detail=detail,
         ))
 
-    async def run(self, raw_query: str) -> SearchResult:
+    async def run(
+        self,
+        raw_query: str,
+        chat_context: tuple[tuple[str, str], ...] = (),
+    ) -> SearchResult:
         """Execute a full iterative search and return the final result.
 
         Args:
             raw_query: The raw user query text.
+            chat_context: Optional pairs of (query_text, synthesis_text)
+                from previous conversations in the same chat session.
 
         Returns:
             A frozen SearchResult with synthesis and citations.
@@ -116,7 +123,7 @@ class SearchOrchestrator:
             phase=SearchPhase.INITIALIZING,
         )
 
-        self._emit(SearchPhase.INITIALIZING, "Search session started")
+        self._emit(SearchPhase.INITIALIZING, t("search_started"))
 
         max_iter = self._config.search.max_iterations
         min_sources = self._config.search.min_sources
@@ -126,6 +133,7 @@ class SearchOrchestrator:
             state = await self._run_iteration(
                 state=state,
                 iteration_num=iteration_num,
+                chat_context=chat_context,
             )
 
             latest = state.iterations[-1]
@@ -157,23 +165,24 @@ class SearchOrchestrator:
         *,
         state: SearchState,
         iteration_num: int,
+        chat_context: tuple[tuple[str, str], ...] = (),
     ) -> SearchState:
         """Run a single search iteration and return updated state."""
         state = state.with_phase(SearchPhase.STRATEGIZING)
         self._emit(
             SearchPhase.STRATEGIZING,
-            "Generating search strategy",
+            t("generating_strategy"),
             iteration=iteration_num,
         )
 
         strategy = await self._llm.generate_search_strategy(
-            state.query, state.iterations,
+            state.query, state.iterations, chat_context,
         )
 
         state = state.with_phase(SearchPhase.SCRAPING)
         self._emit(
             SearchPhase.SCRAPING,
-            f"Searching for: {', '.join(strategy.search_terms[:3])}",
+            ", ".join(strategy.search_terms[:3]),
             iteration=iteration_num,
         )
 
@@ -198,14 +207,14 @@ class SearchOrchestrator:
 
         self._emit(
             SearchPhase.SCRAPING,
-            f"Scraped {pages_scraped} pages",
+            t("scraping_pages", count=pages_scraped),
             iteration=iteration_num,
         )
 
         state = state.with_phase(SearchPhase.EXTRACTING)
         self._emit(
             SearchPhase.EXTRACTING,
-            "Extracting content",
+            t("extracting_content"),
             iteration=iteration_num,
         )
 
@@ -222,7 +231,7 @@ class SearchOrchestrator:
         state = state.with_phase(SearchPhase.ASSESSING)
         self._emit(
             SearchPhase.ASSESSING,
-            f"Assessing {contents_extracted} contents",
+            t("assessing_contents", count=contents_extracted),
             iteration=iteration_num,
         )
 
@@ -291,11 +300,14 @@ class SearchOrchestrator:
     ) -> SearchResult:
         """Synthesize the final answer from accumulated sources."""
         state = state.with_phase(SearchPhase.SYNTHESIZING)
-        self._emit(SearchPhase.SYNTHESIZING, "Synthesizing final answer")
+        self._emit(SearchPhase.SYNTHESIZING, t("synthesizing"))
 
         synthesis = await self._llm.synthesize_answer(
             state.query, state.all_sources,
         )
+
+        include_snippets = self._config.output.include_snippets
+        max_snippet_len = self._config.output.max_snippet_length
 
         citations = tuple(
             Citation(
@@ -306,6 +318,10 @@ class SearchOrchestrator:
                     f"[{idx}] {source.title}. {source.url}"
                 ),
                 url=source.url,
+                snippet=(
+                    source.snippet[:max_snippet_len]
+                    if include_snippets else ""
+                ),
             )
             for idx, source in enumerate(state.all_sources, start=1)
         )
@@ -313,7 +329,7 @@ class SearchOrchestrator:
         duration = time.monotonic() - start_time
 
         state = state.with_phase(SearchPhase.COMPLETE)
-        self._emit(SearchPhase.COMPLETE, f"Search complete in {duration:.1f}s")
+        self._emit(SearchPhase.COMPLETE, t("search_complete", duration=f"{duration:.1f}"))
 
         return SearchResult(
             session_id=state.session_id,

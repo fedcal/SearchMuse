@@ -11,7 +11,8 @@ from searchmuse.version import __version__
 app = typer.Typer(
     name="searchmuse",
     help="Intelligent web research powered by local LLMs.",
-    no_args_is_help=True,
+    no_args_is_help=False,
+    invoke_without_command=True,
     add_completion=False,
 )
 
@@ -22,8 +23,9 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool = typer.Option(
         False,
         "--version",
@@ -32,8 +34,23 @@ def main(
         callback=_version_callback,
         is_eager=True,
     ),
+    config_path: Path | None = typer.Option(
+        None, "--config", "-c", help="Path to custom config YAML",
+    ),
+    lang: str | None = typer.Option(
+        None, "--lang", "-l", help="UI language: en, it, fr, de, es",
+    ),
 ) -> None:
     """SearchMuse: Intelligent web research powered by local LLMs."""
+    if lang is not None:
+        import os
+        os.environ["SEARCHMUSE_LOGGING_UILANGUAGE"] = lang
+
+    if ctx.invoked_subcommand is None:
+        from searchmuse.cli.interactive import InteractiveSession
+
+        session = InteractiveSession(config_path=config_path)
+        session.run()
 
 
 @app.command("search")
@@ -69,5 +86,7 @@ def search_command(
 
 
 from searchmuse.cli.commands import config_app  # noqa: E402
+from searchmuse.cli.ollama_commands import ollama_app  # noqa: E402
 
 app.add_typer(config_app, name="config", help="Manage configuration")
+app.add_typer(ollama_app, name="ollama", help="Manage Ollama models")

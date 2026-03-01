@@ -51,10 +51,11 @@ def _render_citations(result: SearchResult) -> str:
     if not result.citations:
         return "*No sources were cited.*"
 
-    lines = [
-        f"{citation.index}. {citation.formatted_text} — {citation.url}"
-        for citation in result.citations
-    ]
+    lines: list[str] = []
+    for citation in result.citations:
+        lines.append(f"{citation.index}. {citation.formatted_text} — {citation.url}")
+        if citation.snippet:
+            lines.append(f"   > {citation.snippet}")
     return "\n".join(lines)
 
 

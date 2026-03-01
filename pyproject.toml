@@ -52,6 +52,10 @@ all-providers = [
     "searchmuse[gemini]",
     "searchmuse[keyring]",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocs-mermaid2-plugin>=1.1",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",

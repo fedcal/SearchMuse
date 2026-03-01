@@ -22,6 +22,7 @@ from searchmuse.adapters.llm._helpers import (
     summarise_iteration,
 )
 from searchmuse.adapters.llm.prompts import (
+    CONTEXT_SECTION,
     COVERAGE_PROMPT,
     RELEVANCE_PROMPT,
     STRATEGY_PROMPT,
@@ -77,6 +78,7 @@ class BaseLLMAdapter(ABC):
         self,
         query: SearchQuery,
         previous_iterations: tuple[SearchIteration, ...],
+        chat_context: tuple[tuple[str, str], ...] = (),
     ) -> SearchStrategy:
         """Generate a search strategy for the next iteration."""
         previous_summaries = (
@@ -85,8 +87,20 @@ class BaseLLMAdapter(ABC):
             else "(none — this is the first iteration)"
         )
 
+        context_block = ""
+        if chat_context:
+            recent = chat_context[-5:]
+            entries: list[str] = []
+            for idx, (q_text, synth_text) in enumerate(recent, start=1):
+                summary = synth_text[:200].strip()
+                entries.append(f"  {idx}. Query: {q_text}\n     Summary: {summary}")
+            context_block = CONTEXT_SECTION.format(
+                context_entries="\n".join(entries),
+            )
+
         prompt = STRATEGY_PROMPT.format(
             query=query.normalized_text,
+            context_block=context_block,
             previous_summaries=previous_summaries,
         )
 

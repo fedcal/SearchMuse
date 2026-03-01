@@ -20,6 +20,7 @@ from searchmuse.domain.errors import (
     SearchMuseError,
     ValidationError,
 )
+from searchmuse.infrastructure.i18n import t
 
 if TYPE_CHECKING:
     from searchmuse.cli.container import Container
@@ -62,6 +63,9 @@ def run_search(
     try:
         display.start_progress()
 
+        if output_format is not None:
+            os.environ["SEARCHMUSE_OUTPUT_DEFAULTFORMAT"] = output_format
+
         from searchmuse.cli.container import build_container
 
         container = build_container(
@@ -70,53 +74,38 @@ def run_search(
         )
 
         result = asyncio.run(_async_search(container, query))
-
         rendered = container.renderer.render(result)
 
-        if output_format == "json":
-            import json
-
-            json_data = {
-                "session_id": result.session_id,
-                "query": result.query.normalized_text,
-                "synthesis": result.synthesis,
-                "citations": [
-                    {"index": c.index, "text": c.formatted_text, "url": c.url}
-                    for c in result.citations
-                ],
-                "total_sources": result.total_sources_found,
-                "iterations": result.iterations_performed,
-                "duration_seconds": result.duration_seconds,
-            }
-            display.stop_progress()
-            typer.echo(json.dumps(json_data, indent=2, ensure_ascii=False))
+        fmt = container.renderer.format_name
+        if fmt in ("json", "plain"):
+            display.show_result_raw(rendered)
         else:
             display.show_result(result, rendered)
 
     except ValidationError as exc:
-        display.show_error("Validation Error", str(exc))
+        display.show_error(t("validation_error"), str(exc))
         raise typer.Exit(code=1) from exc
     except LLMAuthenticationError as exc:
         display.show_error(
-            "LLM Authentication Error",
-            f"{exc}\n\nCheck your API key: searchmuse config set-key <provider> <key>",
+            t("auth_error"),
+            f"{exc}\n\n{t('check_api_key')}",
         )
         raise typer.Exit(code=1) from exc
     except LLMConnectionError as exc:
         display.show_error(
-            "LLM Connection Error",
-            f"{exc}\n\nMake sure the LLM service is available.",
+            t("connection_error"),
+            f"{exc}\n\n{t('ensure_service')}",
         )
         raise typer.Exit(code=1) from exc
     except ConfigurationError as exc:
-        display.show_error("Configuration Error", str(exc))
+        display.show_error(t("config_error"), str(exc))
         raise typer.Exit(code=1) from exc
     except SearchMuseError as exc:
-        display.show_error("Search Error", str(exc))
+        display.show_error(t("search_error"), str(exc))
         raise typer.Exit(code=1) from exc
     except KeyboardInterrupt:
         display.stop_progress()
-        display.show_info("\nSearch interrupted.")
+        display.show_info(f"\n{t('search_interrupted')}")
         raise typer.Exit(code=130) from None
     finally:
         display.stop_progress()
@@ -183,7 +172,7 @@ def config_check(
         config = load_config(config_path)
         provider = config.llm.provider
 
-        display.show_info(f"Checking services (provider: {provider})...\n")
+        display.show_info(f"{t('checking_services', provider=provider)}\n")
 
         if provider == "ollama":
             ollama_ok = _check_ollama(config.llm.base_url, config.llm.model)
@@ -191,9 +180,9 @@ def config_check(
                 ok=ollama_ok,
                 service="Ollama",
                 detail=(
-                    f"Connected to {config.llm.base_url} (model: {config.llm.model})"
+                    t("connected_to", url=config.llm.base_url, model=config.llm.model)
                     if ollama_ok
-                    else f"Cannot reach {config.llm.base_url}"
+                    else t("cannot_reach", url=config.llm.base_url)
                 ),
             )
             if not ollama_ok:
@@ -203,7 +192,7 @@ def config_check(
             display.show_check_result(
                 ok=api_key_ok,
                 service=f"{provider.capitalize()} API Key",
-                detail="API key resolved" if api_key_ok else "No API key found",
+                detail=t("api_key_resolved") if api_key_ok else t("no_api_key"),
             )
             if not api_key_ok:
                 raise typer.Exit(code=1)
@@ -211,7 +200,7 @@ def config_check(
         display.show_check_result(
             ok=True,
             service="DuckDuckGo",
-            detail="Search backend available (no auth required)",
+            detail=t("search_backend_ok"),
         )
 
         db_path = Path(config.storage.db_path).expanduser()
@@ -219,11 +208,11 @@ def config_check(
         display.show_check_result(
             ok=db_dir_ok,
             service="SQLite",
-            detail=f"Database path: {db_path}",
+            detail=t("db_path", path=db_path),
         )
 
     except ConfigurationError as exc:
-        display.show_error("Configuration Error", str(exc))
+        display.show_error(t("config_error"), str(exc))
         raise typer.Exit(code=1) from exc
 
 
@@ -239,17 +228,17 @@ def config_set_key(
 
     if not keyring_store.is_available():
         display.show_error(
-            "Keyring Unavailable",
-            "The 'keyring' package is not installed. "
-            "Install it with: pip install 'searchmuse[keyring]'",
+            t("keyring_error"),
+            f"{t('keyring_unavailable')} "
+            f"{t('keyring_install_hint')}",
         )
         raise typer.Exit(code=1)
 
     ok = keyring_store.store_api_key(provider, api_key)
     if ok:
-        display.show_info(f"API key for {provider!r} stored in system keyring.")
+        display.show_info(t("key_stored", provider=provider))
     else:
-        display.show_error("Keyring Error", f"Failed to store API key for {provider!r}.")
+        display.show_error(t("keyring_error"), t("key_store_failed", provider=provider))
         raise typer.Exit(code=1)
 
 
@@ -264,9 +253,9 @@ def config_get_key(
 
     key = resolve_api_key(provider)
     if key:
-        display.show_info(f"API key for {provider!r}: {_mask_key(key)}")
+        display.show_info(f"{t('api_key_resolved')}: {_mask_key(key)}")
     else:
-        display.show_info(f"No API key found for {provider!r}.")
+        display.show_info(t("no_key_found", provider=provider))
 
 
 # ---------------------------------------------------------------------------

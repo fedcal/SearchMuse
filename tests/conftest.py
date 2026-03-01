@@ -232,5 +232,6 @@ def test_config(tmp_path: object) -> SearchMuseConfig:
             level="DEBUG",
             file=None,
             timestamps=True,
+            ui_language="en",
         ),
     )

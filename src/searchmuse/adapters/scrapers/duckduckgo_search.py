@@ -93,6 +93,21 @@ def _run_ddgs_text(
 # ---------------------------------------------------------------------------
 
 
+_LANGUAGE_TO_REGION: dict[str, str] = {
+    "en": "wt-wt",
+    "it": "it-it",
+    "de": "de-de",
+    "fr": "fr-fr",
+    "es": "es-es",
+    "pt": "pt-pt",
+    "nl": "nl-nl",
+    "ja": "ja-jp",
+    "zh": "zh-cn",
+    "ko": "ko-kr",
+    "ru": "ru-ru",
+}
+
+
 class DuckDuckGoSearchAdapter:
     """Async search adapter backed by DuckDuckGo via ``duckduckgo-search``.
 
@@ -111,10 +126,12 @@ class DuckDuckGoSearchAdapter:
         safesearch: SafeSearch setting: ``"on"``, ``"moderate"``, or ``"off"``.
         timelimit: Optional freshness filter.  Pass ``"d"``, ``"w"``, ``"m"``,
             or ``"y"`` to restrict results to the last day/week/month/year.
+        language: BCP-47 language code used to derive the DDG region.
+            When provided, overrides the ``region`` parameter.
 
     Example::
 
-        adapter = DuckDuckGoSearchAdapter(max_results=5)
+        adapter = DuckDuckGoSearchAdapter(max_results=5, language="it")
         hits = await adapter.search("python asyncio patterns")
         await adapter.close()
     """
@@ -126,9 +143,14 @@ class DuckDuckGoSearchAdapter:
         region: str = _DEFAULT_REGION,
         safesearch: str = _DEFAULT_SAFESEARCH,
         timelimit: str | None = _DEFAULT_TIMELIMIT,
+        language: str | None = None,
     ) -> None:
         self._default_max_results: int = max_results
-        self._region: str = region
+        self._region: str = (
+            _LANGUAGE_TO_REGION.get(language, _DEFAULT_REGION)
+            if language is not None
+            else region
+        )
         self._safesearch: str = safesearch
         self._timelimit: str | None = timelimit
 

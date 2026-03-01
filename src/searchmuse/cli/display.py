@@ -16,6 +16,7 @@ from rich.table import Table
 from rich.text import Text
 
 from searchmuse.domain.enums import SearchPhase
+from searchmuse.infrastructure.i18n import t
 from searchmuse.version import __version__
 
 if TYPE_CHECKING:
@@ -25,16 +26,22 @@ if TYPE_CHECKING:
     from searchmuse.domain.models import SearchResult
     from searchmuse.infrastructure.config import SearchMuseConfig
 
-_PHASE_LABELS: dict[SearchPhase, str] = {
-    SearchPhase.INITIALIZING: "Initializing",
-    SearchPhase.STRATEGIZING: "Strategizing",
-    SearchPhase.SCRAPING: "Scraping",
-    SearchPhase.EXTRACTING: "Extracting",
-    SearchPhase.ASSESSING: "Assessing",
-    SearchPhase.SYNTHESIZING: "Synthesizing",
-    SearchPhase.COMPLETE: "Complete",
-    SearchPhase.FAILED: "Failed",
+_PHASE_KEYS: dict[SearchPhase, str] = {
+    SearchPhase.INITIALIZING: "phase_initializing",
+    SearchPhase.STRATEGIZING: "phase_strategizing",
+    SearchPhase.SCRAPING: "phase_scraping",
+    SearchPhase.EXTRACTING: "phase_extracting",
+    SearchPhase.ASSESSING: "phase_assessing",
+    SearchPhase.SYNTHESIZING: "phase_synthesizing",
+    SearchPhase.COMPLETE: "phase_complete",
+    SearchPhase.FAILED: "phase_failed",
 }
+
+
+def _get_phase_label(phase: SearchPhase) -> str:
+    """Return the translated label for a search phase."""
+    key = _PHASE_KEYS.get(phase)
+    return t(key) if key else str(phase)
 
 _PHASE_COLORS: dict[SearchPhase, str] = {
     SearchPhase.INITIALIZING: "blue",
@@ -112,7 +119,7 @@ class Display:
     def _build_banner_left(self, config: SearchMuseConfig | None) -> Text:
         """Build the left column: welcome message, mascot, provider info."""
         parts: list[str] = [
-            "[bold cyan]Welcome to SearchMuse![/]",
+            f"[bold cyan]{t('welcome')}[/]",
             "",
         ]
         parts.extend(_MASCOT_ART)
@@ -131,7 +138,7 @@ class Display:
     def _build_banner_right(self, config: SearchMuseConfig | None) -> Text:
         """Build the right column: tips and provider status."""
         parts: list[str] = [
-            "[bold yellow]Tips for getting started[/]",
+            f"[bold yellow]{t('tips_title')}[/]",
             '  searchmuse search [cyan]"your query"[/]',
             "  Use [bold]-p claude[/] to switch provider",
             "  searchmuse config check",
@@ -149,7 +156,7 @@ class Display:
         from searchmuse.adapters.llm._defaults import PROVIDER_DEFAULTS
         from searchmuse.infrastructure.api_key_resolver import resolve_api_key
 
-        lines: list[str] = ["[bold yellow]Provider status[/]"]
+        lines: list[str] = [f"[bold yellow]{t('provider_status')}[/]"]
 
         for name, defaults in PROVIDER_DEFAULTS.items():
             is_active = name == config.llm.provider
@@ -177,7 +184,7 @@ class Display:
         if self._quiet:
             return
         self._status = self._console.status(
-            "Starting...",
+            t("starting"),
             spinner="dots",
         )
         self._status.start()
@@ -193,7 +200,7 @@ class Display:
         if self._quiet:
             return
 
-        label = _PHASE_LABELS.get(event.phase, str(event.phase))
+        label = _get_phase_label(event.phase)
         color = _PHASE_COLORS.get(event.phase, "white")
 
         message = f"[{color}]{label}[/] {event.message}"
@@ -224,7 +231,7 @@ class Display:
         panel = Panel(
             f"[bold]{title}[/]\n\n{message}",
             border_style="red",
-            title="Error",
+            title=t("error_panel_title"),
             padding=(1, 2),
         )
         self._console.print(panel)
@@ -239,7 +246,7 @@ class Display:
         panel = Panel(
             config_text,
             border_style="cyan",
-            title="Configuration",
+            title=t("config_panel_title"),
             padding=(1, 2),
         )
         self._console.print(panel)

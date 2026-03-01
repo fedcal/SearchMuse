@@ -82,3 +82,5 @@ logging:
   file: null
   # Include timestamps in log output
   timestamps: true
+  # UI language: "en", "it", "fr", "de", "es"
+  ui_language: "en"

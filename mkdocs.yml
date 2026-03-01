@@ -1,0 +1,101 @@
+site_name: SearchMuse
+site_description: Intelligent web research powered by local LLMs
+site_url: https://user.github.io/searchmuse/
+repo_url: https://github.com/user/searchmuse
+repo_name: user/searchmuse
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: cyan
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: cyan
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Functional:
+      - Overview: 001_functional/000_README.md
+      - Vision & Goals: 001_functional/001_vision-and-goals.md
+      - Use Cases: 001_functional/002_use-cases.md
+      - Feature Specifications: 001_functional/003_feature-specifications.md
+      - Search Algorithm: 001_functional/004_search-refinement-algorithm.md
+      - Source Citation: 001_functional/005_source-citation.md
+      - Supported Websites: 001_functional/006_supported-websites.md
+      - LLM Requirements: 001_functional/007_llm-requirements.md
+      - Input/Output Formats: 001_functional/008_input-output-formats.md
+      - Limitations: 001_functional/009_limitations.md
+      - Roadmap: 001_functional/010_roadmap.md
+  - Technical:
+      - Architecture: 002_technical/001_architecture.md
+      - Components: 002_technical/002_components.md
+      - Data Flow: 002_technical/003_data-flow.md
+      - API Reference: 002_technical/004_api-reference.md
+      - Configuration: 002_technical/005_configuration-reference.md
+      - Development Setup: 002_technical/006_development-setup.md
+      - Testing Strategy: 002_technical/007_testing-strategy.md
+      - Deployment: 002_technical/008_deployment.md
+      - Security: 002_technical/009_security.md
+      - Contributing: 002_technical/010_contributing.md
+  - Italiano:
+      - Indice: 003_it/000_index.md
+      - Funzionale:
+          - README: 003_it/001_functional/000_README.md
+          - Visione e Obiettivi: 003_it/001_functional/001_vision-and-goals.md
+          - Casi d'Uso: 003_it/001_functional/002_use-cases.md
+          - Specifiche Funzionali: 003_it/001_functional/003_feature-specifications.md
+          - Algoritmo di Ricerca: 003_it/001_functional/004_search-refinement-algorithm.md
+          - Citazioni Fonti: 003_it/001_functional/005_source-citation.md
+          - Siti Supportati: 003_it/001_functional/006_supported-websites.md
+          - Requisiti LLM: 003_it/001_functional/007_llm-requirements.md
+          - Formati I/O: 003_it/001_functional/008_input-output-formats.md
+          - Limitazioni: 003_it/001_functional/009_limitations.md
+          - Roadmap: 003_it/001_functional/010_roadmap.md
+      - Tecnico:
+          - Architettura: 003_it/002_technical/001_architecture.md
+          - Componenti: 003_it/002_technical/002_components.md
+          - Flusso Dati: 003_it/002_technical/003_data-flow.md
+          - Riferimento API: 003_it/002_technical/004_api-reference.md
+          - Configurazione: 003_it/002_technical/005_configuration-reference.md
+          - Setup Sviluppo: 003_it/002_technical/006_development-setup.md
+          - Strategia Test: 003_it/002_technical/007_testing-strategy.md
+          - Deployment: 003_it/002_technical/008_deployment.md
+          - Sicurezza: 003_it/002_technical/009_security.md
+          - Contribuire: 003_it/002_technical/010_contributing.md
