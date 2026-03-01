@@ -244,7 +244,9 @@ class TestInteractiveQueryExecution:
             session = _make_session()
             session.run()
 
-        mock_container.orchestrator.run.assert_called_once_with("quantum computing")
+        mock_container.orchestrator.run.assert_called_once_with(
+            "quantum computing", chat_context=(),
+        )
 
     def test_query_with_provider_flag(self) -> None:
         inputs = iter(["AI safety -p claude", "exit"])
@@ -273,7 +275,9 @@ class TestInteractiveQueryExecution:
             session = _make_session()
             session.run()
 
-        mock_container.orchestrator.run.assert_called_once_with("AI safety")
+        mock_container.orchestrator.run.assert_called_once_with(
+            "AI safety", chat_context=(),
+        )
 
 
 # ---------------------------------------------------------------------------
