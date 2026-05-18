@@ -355,3 +355,360 @@ class TestInteractiveBannerDisplay:
             session.run()
 
         mock_banner.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Test: _show_models
+# ---------------------------------------------------------------------------
+
+
+def _make_config_mock(base_url: str = "http://localhost:11434", model: str = "llama3"):
+    cfg = MagicMock()
+    cfg.llm.base_url = base_url
+    cfg.llm.model = model
+    return cfg
+
+
+class TestShowModels:
+    """_show_models renders installed Ollama models, with error fallbacks."""
+
+    def test_unreachable_prints_error(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with patch(
+            "searchmuse.infrastructure.ollama_client.is_reachable",
+            return_value=False,
+        ):
+            session._show_models(_make_config_mock())
+        session._console.print.assert_called_once()
+
+    def test_list_models_exception_prints_error(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with (
+            patch(
+                "searchmuse.infrastructure.ollama_client.is_reachable",
+                return_value=True,
+            ),
+            patch(
+                "searchmuse.infrastructure.ollama_client.list_models",
+                side_effect=RuntimeError("boom"),
+            ),
+        ):
+            session._show_models(_make_config_mock())
+        session._console.print.assert_called_once()
+
+    def test_empty_models_prints_hint(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with (
+            patch(
+                "searchmuse.infrastructure.ollama_client.is_reachable",
+                return_value=True,
+            ),
+            patch(
+                "searchmuse.infrastructure.ollama_client.list_models",
+                return_value=(),
+            ),
+        ):
+            session._show_models(_make_config_mock())
+        session._console.print.assert_called_once()
+
+    def test_populated_models_prints_table(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        model_a = MagicMock()
+        model_a.name = "llama3:latest"
+        model_a.size_bytes = 4_000_000_000
+        model_b = MagicMock()
+        model_b.name = "mistral"
+        model_b.size_bytes = 0
+        with (
+            patch(
+                "searchmuse.infrastructure.ollama_client.is_reachable",
+                return_value=True,
+            ),
+            patch(
+                "searchmuse.infrastructure.ollama_client.list_models",
+                return_value=(model_a, model_b),
+            ),
+        ):
+            session._show_models(_make_config_mock(model="llama3"))
+        session._console.print.assert_called_once()
+
+    def test_none_config_uses_default_url(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with patch(
+            "searchmuse.infrastructure.ollama_client.is_reachable",
+            return_value=False,
+        ) as mock_reach:
+            session._show_models(None)
+        mock_reach.assert_called_once_with("http://localhost:11434")
+
+
+# ---------------------------------------------------------------------------
+# Test: _switch_language
+# ---------------------------------------------------------------------------
+
+
+class TestSwitchLanguage:
+    """_switch_language sets the UI language if supported."""
+
+    def test_unsupported_language_warns(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        session._switch_language("xx")
+        session._console.print.assert_called_once()
+
+    def test_supported_language_sets_and_confirms(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with patch(
+            "searchmuse.infrastructure.i18n.set_language"
+        ) as mock_set:
+            session._switch_language("it")
+        mock_set.assert_called_once_with("it")
+        session._console.print.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Test: _switch_model
+# ---------------------------------------------------------------------------
+
+
+class TestSwitchModel:
+    """_switch_model sets SEARCHMUSE_LLM_MODEL after validating Ollama."""
+
+    def test_unreachable_prints_error(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with patch(
+            "searchmuse.infrastructure.ollama_client.is_reachable",
+            return_value=False,
+        ):
+            session._switch_model("llama3", _make_config_mock())
+        session._console.print.assert_called_once()
+
+    def test_model_missing_warns(self) -> None:
+        session = _make_session()
+        session._console = MagicMock()
+        with (
+            patch(
+                "searchmuse.infrastructure.ollama_client.is_reachable",
+                return_value=True,
+            ),
+            patch(
+                "searchmuse.infrastructure.ollama_client.model_exists",
+                return_value=False,
+            ),
+        ):
+            session._switch_model("mystery", _make_config_mock())
+        session._console.print.assert_called_once()
+
+    def test_model_present_sets_env(self) -> None:
+        import os
+
+        session = _make_session()
+        session._console = MagicMock()
+        try:
+            with (
+                patch(
+                    "searchmuse.infrastructure.ollama_client.is_reachable",
+                    return_value=True,
+                ),
+                patch(
+                    "searchmuse.infrastructure.ollama_client.model_exists",
+                    return_value=True,
+                ),
+            ):
+                session._switch_model("llama3", _make_config_mock())
+            assert os.environ["SEARCHMUSE_LLM_MODEL"] == "llama3"
+        finally:
+            os.environ.pop("SEARCHMUSE_LLM_MODEL", None)
+
+
+# ---------------------------------------------------------------------------
+# Test: error paths in _execute_query
+# ---------------------------------------------------------------------------
+
+
+class TestExecuteQueryErrorPaths:
+    """_execute_query maps each exception type to the right Display call."""
+
+    def _run_with_error(self, exc: Exception) -> MagicMock:
+        from contextlib import ExitStack
+
+        inputs = iter(["a query", "exit"])
+        with ExitStack() as stack:
+            stack.enter_context(_patch_load_config())
+            stack.enter_context(
+                patch.object(
+                    InteractiveSession, "_read_input", side_effect=inputs
+                )
+            )
+            stack.enter_context(
+                patch("searchmuse.cli.display.Display.show_banner")
+            )
+            stack.enter_context(
+                patch("searchmuse.cli.display.Display.start_progress")
+            )
+            stack.enter_context(
+                patch("searchmuse.cli.display.Display.stop_progress")
+            )
+            mock_error = stack.enter_context(
+                patch("searchmuse.cli.display.Display.show_error")
+            )
+            stack.enter_context(
+                patch(
+                    "searchmuse.cli.container.build_container",
+                    side_effect=exc,
+                )
+            )
+            session = _make_session()
+            session.run()
+        return mock_error
+
+    def test_llm_auth_error(self) -> None:
+        from searchmuse.domain.errors import LLMAuthenticationError
+
+        mock = self._run_with_error(
+            LLMAuthenticationError("auth", model="claude", detail="401")
+        )
+        mock.assert_called_once()
+
+    def test_llm_connection_error(self) -> None:
+        from searchmuse.domain.errors import LLMConnectionError
+
+        mock = self._run_with_error(
+            LLMConnectionError("conn", model="claude", detail="refused")
+        )
+        mock.assert_called_once()
+
+    def test_configuration_error(self) -> None:
+        from searchmuse.domain.errors import ConfigurationError
+
+        mock = self._run_with_error(ConfigurationError("bad config"))
+        mock.assert_called_once()
+
+    def test_generic_searchmuse_error(self) -> None:
+        from searchmuse.domain.errors import SearchMuseError
+
+        mock = self._run_with_error(SearchMuseError("oops"))
+        mock.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Test: iteration flag triggers env override
+# ---------------------------------------------------------------------------
+
+
+class TestIterationFlagEnvOverride:
+    """The -i flag sets SEARCHMUSE_SEARCH_MAXITERATIONS for the duration of the query."""
+
+    def test_iteration_flag_sets_env(self) -> None:
+        import os
+
+        inputs = iter(["topic -i 5", "exit"])
+
+        mock_result = MagicMock()
+        mock_container = MagicMock()
+        mock_container.orchestrator.run = AsyncMock(return_value=mock_result)
+        mock_container.renderer.render.return_value = "answer"
+        mock_container.close = AsyncMock()
+
+        observed: dict[str, str] = {}
+
+        def _capture_run(*args, **kwargs):
+            observed["max"] = os.environ.get("SEARCHMUSE_SEARCH_MAXITERATIONS", "")
+            return mock_result
+
+        mock_container.orchestrator.run = AsyncMock(side_effect=_capture_run)
+
+        with (
+            _patch_load_config(),
+            patch.object(
+                InteractiveSession, "_read_input", side_effect=inputs
+            ),
+            patch("searchmuse.cli.display.Display.show_banner"),
+            patch("searchmuse.cli.display.Display.start_progress"),
+            patch("searchmuse.cli.display.Display.stop_progress"),
+            patch("searchmuse.cli.display.Display.show_result"),
+            patch(
+                "searchmuse.cli.container.build_container",
+                return_value=mock_container,
+            ),
+        ):
+            session = _make_session()
+            session.run()
+
+        assert observed["max"] == "5"
+        assert "SEARCHMUSE_SEARCH_MAXITERATIONS" not in os.environ
+
+
+# ---------------------------------------------------------------------------
+# Test: dispatch from run() to model/lang/chat handlers
+# ---------------------------------------------------------------------------
+
+
+class TestRunDispatch:
+    """run() dispatches to the correct handler based on the input token."""
+
+    def test_models_command_calls_show_models(self) -> None:
+        inputs = iter(["models", "exit"])
+        with (
+            _patch_load_config(),
+            patch.object(
+                InteractiveSession, "_read_input", side_effect=inputs
+            ),
+            patch("searchmuse.cli.display.Display.show_banner"),
+            patch.object(InteractiveSession, "_show_models") as mock_show,
+        ):
+            session = _make_session()
+            session.run()
+        mock_show.assert_called_once()
+
+    def test_use_with_model_calls_switch(self) -> None:
+        inputs = iter(["use llama3", "exit"])
+        with (
+            _patch_load_config(),
+            patch.object(
+                InteractiveSession, "_read_input", side_effect=inputs
+            ),
+            patch("searchmuse.cli.display.Display.show_banner"),
+            patch.object(InteractiveSession, "_switch_model") as mock_switch,
+        ):
+            session = _make_session()
+            session.run()
+        mock_switch.assert_called_once()
+        assert mock_switch.call_args[0][0] == "llama3"
+
+    def test_lang_with_code_calls_switch(self) -> None:
+        inputs = iter(["lang it", "exit"])
+        with (
+            _patch_load_config(),
+            patch.object(
+                InteractiveSession, "_read_input", side_effect=inputs
+            ),
+            patch("searchmuse.cli.display.Display.show_banner"),
+            patch.object(InteractiveSession, "_switch_language") as mock_lang,
+        ):
+            session = _make_session()
+            session.run()
+        mock_lang.assert_called_once_with("it")
+
+    def test_chat_command_routes_to_handler(self) -> None:
+        inputs = iter(["new", "exit"])
+        with (
+            _patch_load_config(),
+            patch.object(
+                InteractiveSession, "_read_input", side_effect=inputs
+            ),
+            patch("searchmuse.cli.display.Display.show_banner"),
+            patch.object(
+                InteractiveSession, "_handle_chat_command"
+            ) as mock_handle,
+        ):
+            session = _make_session()
+            session.run()
+        mock_handle.assert_called_once()
