@@ -1,8 +1,11 @@
 site_name: SearchMuse
 site_description: Intelligent web research powered by local LLMs
-site_url: https://user.github.io/searchmuse/
-repo_url: https://github.com/user/searchmuse
-repo_name: user/searchmuse
+site_author: Federico Calo
+site_url: https://fedcal.github.io/SearchMuse/
+repo_url: https://github.com/fedcal/SearchMuse
+repo_name: fedcal/SearchMuse
+edit_uri: edit/master/docs/
+copyright: Copyright &copy; 2026 Federico Calo &mdash; MIT License
 
 theme:
   name: material
@@ -76,11 +79,15 @@ extra_javascript:
 extra:
   alternate:
     - name: English
-      link: /searchmuse/
+      link: /SearchMuse/
       lang: en
     - name: Italiano
-      link: /searchmuse/003_it/000_index/
+      link: /SearchMuse/003_it/000_index/
       lang: it
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/fedcal/SearchMuse
+      name: SearchMuse on GitHub
 
 nav:
   - Home: index.md

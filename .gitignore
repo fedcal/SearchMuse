@@ -60,3 +60,6 @@ test-results/
 # Distribution
 *.tar.gz
 *.whl
+
+# MkDocs build output
+/site/

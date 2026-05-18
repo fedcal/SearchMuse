@@ -70,10 +70,11 @@ dev = [
 searchmuse = "searchmuse.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/user/searchmuse"
-Documentation = "https://github.com/user/searchmuse/tree/main/docs"
-Repository = "https://github.com/user/searchmuse"
-Issues = "https://github.com/user/searchmuse/issues"
+Homepage = "https://github.com/fedcal/SearchMuse"
+Documentation = "https://fedcal.github.io/SearchMuse/"
+Repository = "https://github.com/fedcal/SearchMuse"
+Issues = "https://github.com/fedcal/SearchMuse/issues"
+Changelog = "https://github.com/fedcal/SearchMuse/blob/master/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "src/searchmuse/version.py"
