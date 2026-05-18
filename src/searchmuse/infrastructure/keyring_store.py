@@ -21,7 +21,7 @@ try:
 
     _HAS_KEYRING: bool = True
 except ImportError:
-    _keyring = None  # type: ignore[assignment]
+    _keyring = None  # type: ignore[assignment, unused-ignore]
     _HAS_KEYRING = False
 
 
