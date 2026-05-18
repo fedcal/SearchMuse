@@ -84,7 +84,8 @@ class ClaudeLLMAdapter(BaseLLMAdapter):
             ) from exc
 
         try:
-            text: str = response.content[0].text
+            block = response.content[0]
+            text: str = block.text  # type: ignore[union-attr]
         except (IndexError, AttributeError) as exc:
             raise LLMResponseError(
                 "Unexpected Anthropic response structure",

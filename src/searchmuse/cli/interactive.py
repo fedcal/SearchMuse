@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from searchmuse.cli.container import Container
     from searchmuse.domain.models import SearchResult
     from searchmuse.infrastructure.config import SearchMuseConfig
+    from searchmuse.ports.chat_repository_port import ChatRepositoryPort
 
 _EXIT_COMMANDS: frozenset[str] = frozenset({"exit", "quit", "q"})
 _HELP_COMMANDS: frozenset[str] = frozenset({"help", "?", "h"})
@@ -417,7 +418,9 @@ class InteractiveSession:
 
         self._console.print(f"[green]{t('chat_deleted', name=session.name)}[/]")
 
-    def _get_chat_repo(self, config: SearchMuseConfig | None) -> object | None:
+    def _get_chat_repo(
+        self, config: SearchMuseConfig | None
+    ) -> ChatRepositoryPort | None:
         """Build a chat repository from config."""
         from searchmuse.adapters.repositories.sqlite_chat_repository import (
             SqliteChatRepositoryAdapter,
