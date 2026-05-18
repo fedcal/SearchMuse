@@ -11,19 +11,17 @@ every public function returns ``None`` or silently does nothing.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 _SERVICE_NAME: str = "searchmuse"
 
-_keyring: Any
 try:
     import keyring as _keyring
 
     _HAS_KEYRING: bool = True
 except ImportError:
-    _keyring = None
+    _keyring = None  # type: ignore[assignment]
     _HAS_KEYRING = False
 
 
